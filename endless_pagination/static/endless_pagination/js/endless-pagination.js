@@ -176,10 +176,24 @@
             );  
         },
 
+        getUrlParameters: function()
+        {
+            var sPageURL = window.location.search.substring(1);
+            var sURLVariables = sPageURL.split('&');
+            var parameters = {};
+            for (var i = 0; i < sURLVariables.length; i++) 
+            {
+                var sParameterName = sURLVariables[i].split('=');
+                parameters[sParameterName[0]] = sParameterName[1];
+            }
+          
+            return parameters;
+        },
+
         // Get the data to submit to server and fetch the page
         getData: function()
         {
-            var data = {};
+            var data = this.getUrlParameters();
 
             // If there is a form defined, grab the data
             if ( settings.formSelector && $( settings.formSelector ).length ) {
