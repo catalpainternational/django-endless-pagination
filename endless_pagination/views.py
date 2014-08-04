@@ -76,6 +76,18 @@ class MultipleObjectMixin(object):
         queryset = kwargs.pop('object_list')
         page_template = kwargs.pop('page_template', None)
 
+        if hasattr(queryset, 'order_by'):
+            if 'sort_column' in self.request.GET:
+                try:
+                    order = ''
+                    if 'sort_order' in self.request.GET and self.request.GET['sort_order'] == '1':
+                        order = '-'
+
+                    order_sentence = '%s%s' % (order, self.request.GET['sort_column'])
+                    queryset = queryset.order_by(order_sentence)
+                except:
+                    pass
+
         context_object_name = self.get_context_object_name(queryset)
         context = {'object_list': queryset, 'view': self}
         context.update(kwargs)

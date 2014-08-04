@@ -164,7 +164,7 @@
                 {
                     url: param.url,
                     dataType: 'html',
-                    method: $( settings.formSelector ).length ? 'POST' : 'GET',
+                    method: 'GET',//$( settings.formSelector ).length ? 'POST' : 'GET',
                     data: param.data,
                     beforeSend: function()
                     {
