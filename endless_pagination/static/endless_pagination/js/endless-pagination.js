@@ -46,6 +46,8 @@
         initialContext: {},
         // Initial amount of loaded pages
         loadedPages: 1,
+        // Set request method to fetch data
+        requestMethod: 'GET'
     };
 
     var settings = null;
@@ -164,7 +166,7 @@
                 {
                     url: param.url,
                     dataType: 'html',
-                    method: 'GET',//$( settings.formSelector ).length ? 'POST' : 'GET',
+                    method: settings.requestMethod,
                     data: param.data,
                     beforeSend: function()
                     {
