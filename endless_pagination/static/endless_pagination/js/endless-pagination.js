@@ -27,7 +27,7 @@
         // If paginate-on-scroll is on, it is possible to define chunks.
         paginateOnScrollChunkSize: 0,
         // End Point to fetch data
-        endPoint: location.pathname,
+        endPoint: location.pathname + location.search,
         // Form to get filters from
         formSelector: null,
         // Custom filters that can be passed
@@ -161,6 +161,15 @@
         },
         fetchPage: function( param )
         {
+        	var urlParameters = this.getUrlParameters( param.url.replace( /^.*\?/gi, '' ) );
+        	for ( var x in urlParameters ) {
+        		if ( param.data[x] != undefined )
+        			delete urlParameters[x];
+        	}
+
+        	param.url = param.url.replace(/\?.*/gi, '' );
+        	param.url += '?' + $.param( urlParameters );
+
             // Send the Ajax request.
             $.ajax(
                 {
@@ -178,17 +187,20 @@
             );  
         },
 
-        getUrlParameters: function()
+        getUrlParameters: function( url )
         {
-            var sPageURL = window.location.search.substring(1);
+            var sPageURL = url || window.location.search.substring(1);
+
+            sPageURL = sPageURL.replace( /(^\/|\/$)/g, '' );
             var sURLVariables = sPageURL.split('&');
             var parameters = {};
-            for (var i = 0; i < sURLVariables.length; i++) 
-            {
+            for ( var i = 0; i < sURLVariables.length; i++ ) {
+
                 var sParameterName = sURLVariables[i].split('=');
+                if ( !sParameterName[0] ) continue;
                 parameters[sParameterName[0]] = sParameterName[1];
             }
-          
+
             return parameters;
         },
 
