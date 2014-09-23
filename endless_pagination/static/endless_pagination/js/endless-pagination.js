@@ -27,7 +27,7 @@
         // If paginate-on-scroll is on, it is possible to define chunks.
         paginateOnScrollChunkSize: 0,
         // End Point to fetch data
-        endPoint: location.pathname + location.search,
+        endPoint: location.pathname,
         // Form to get filters from
         formSelector: null,
         // Custom filters that can be passed
@@ -46,8 +46,6 @@
         initialContext: {},
         // Initial amount of loaded pages
         loadedPages: 1,
-        // Set request method to fetch data
-        requestMethod: 'GET'
     };
 
     var settings = null;
@@ -67,6 +65,7 @@
             return this.each(function() 
             {
                 var element = $(this);
+                var toLoad = false;
 
                 // Configure to check if there is form to filter
                 methods.configFormFilter( element );
@@ -74,7 +73,11 @@
                 methods.configSorting( element );
 
                 // Twitter-style pagination.
-                element.on('click', settings.moreSelector, function() {
+                element.on( 'click', settings.moreSelector, function() {
+
+                    if ( toLoad ) return false;
+
+                    toLoad = true;
 
                     var link = $(this),
                         html_link = link.get(0),
@@ -88,6 +91,7 @@
 
                     link.hide();
                     loading.show();
+
                     var context = getContext( link );
 
                     // Fire onClick callback.
@@ -106,6 +110,8 @@
 
                                 // Fire onCompleted callback.
                                 settings.onCompleted.apply( html_link, [context, fragment] );
+
+                                toLoad = false;
                             }
                         };
 
@@ -120,12 +126,14 @@
 
                     var win = $(window),
                         doc = $(document);
+
                     win.scroll(
                         function()
                         {
                             if ( doc.height() - win.height() -
                                 win.scrollTop() <= settings.paginateOnScrollMargin )
                                  {
+
                                 // Do not paginate on scroll if chunks are used and
                                 // the current chunk is complete.
                                 var chunckSize = settings.paginateOnScrollChunkSize;
@@ -161,21 +169,12 @@
         },
         fetchPage: function( param )
         {
-        	var urlParameters = this.getUrlParameters( param.url.replace( /^.*\?/gi, '' ) );
-        	for ( var x in urlParameters ) {
-        		if ( param.data[x] != undefined )
-        			delete urlParameters[x];
-        	}
-
-        	param.url = param.url.replace(/\?.*/gi, '' );
-        	param.url += '?' + $.param( urlParameters );
-
             // Send the Ajax request.
             $.ajax(
                 {
-                    url: param.url,
+                    url: param.url.substring(0, param.url.indexOf('?') ),
                     dataType: 'html',
-                    method: settings.requestMethod,
+                    method: 'GET',//$( settings.formSelector ).length ? 'POST' : 'GET',
                     data: param.data,
                     beforeSend: function()
                     {
@@ -189,18 +188,16 @@
 
         getUrlParameters: function( url )
         {
-            var sPageURL = url || window.location.search.substring(1);
+            url = url || window.location.search.substring(1);
 
-            sPageURL = sPageURL.replace( /(^\/|\/$)/g, '' );
+            var sPageURL = url;
             var sURLVariables = sPageURL.split('&');
             var parameters = {};
             for ( var i = 0; i < sURLVariables.length; i++ ) {
-
                 var sParameterName = sURLVariables[i].split('=');
-                if ( !sParameterName[0] ) continue;
                 parameters[sParameterName[0]] = sParameterName[1];
             }
-
+          
             return parameters;
         },
 
@@ -208,6 +205,19 @@
         getData: function()
         {
             var data = this.getUrlParameters();
+
+            var linkUrl = $( settings.moreSelector ).attr( 'href' );
+
+            if ( linkUrl ) {
+
+                linkUrl = linkUrl.substring( linkUrl.indexOf( '?' ) + 1);
+
+                var linkParameters = this.getUrlParameters( linkUrl );
+                
+                for ( var item in linkParameters )
+                    if ( data[item] === undefined )
+                        data[item] = linkParameters[item]
+            }
 
             // If there is a form defined, grab the data
             if ( settings.formSelector && $( settings.formSelector ).length ) {
@@ -225,13 +235,14 @@
                 data = $.extend( data, settings.customFilters );
 
             // Some column sorting
-            if ( settings.sortColumn ) {
+            if ( settings.enableSorting && settings.sortColumn ) {
 
                 data.sort_column = settings.sortColumn.column;
                 data.sort_order = settings.sortColumn.order;
             }
 
             data.querystring_key = settings.initialContext.key;
+
             return data;
         },
 
@@ -243,9 +254,15 @@
                     {
                         e.stopPropagation();
 
+                        var data = methods.getData();
+                        delete data['page'];
+
+                        var urlSearch = settings.endPoint + '?' + $.param( data );
+                        window.history.pushState( {}, "Endless Pagination", urlSearch );
+
                         var params = {
                             url: settings.endPoint,
-                            data: methods.getData(),
+                            data: data,
                             complete: function( fragment )
                             {
                                 $( settings.pageContainer ).empty().append( fragment );
