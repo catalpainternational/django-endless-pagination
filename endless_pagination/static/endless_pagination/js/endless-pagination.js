@@ -406,7 +406,7 @@
             if ( settings.clearAllOnReload ) {
 
                 if ( $( settings.formSelector ).length )
-                    $( settings.formSelector )[0].reset();
+                    $( ':input', settings.formSelector ).val('').trigger( 'change' ).trigger( 'liszt:updated' );
 
                 if ( $( settings.searchField ).length )
                     $( settings.searchField ).val( '' );
@@ -414,6 +414,9 @@
 
             var data = methods.getData();
             delete data['page'];
+
+            var urlSearch = settings.endPoint + '?' + $.param( data );
+            window.history.pushState( {}, "Endless Pagination", urlSearch );
 
             var params = {
                 url: settings.endPoint,
