@@ -20,6 +20,8 @@
         onBefore: function() {},
         // Callback called when the new page is correctly displayed.
         onCompleted: function() {},
+        // Callback calledn when a sorting is completed
+        onSort: undefined,
         // Set this to true to use the paginate-on-scroll feature.
         paginateOnScroll: false,
         // If paginate-on-scroll is on, this margin will be used.
@@ -42,13 +44,18 @@
         cssSortingClassAsc: 'headerSortUp',
         // CSS class to header when sorting DESC
         cssSortingClassDesc: 'headerSortDown',
+        // Selector to Search Field
+        searchField: null,
         // Save the initial context
         initialContext: {},
         // Initial amount of loaded pages
         loadedPages: 1,
+        // To clear all on reload
+        clearAllOnReload: true,
     };
 
     var settings = null;
+    var toLoad = false;
 
     var methods = {
         init : function(options) {
@@ -65,12 +72,13 @@
             return this.each(function() 
             {
                 var element = $(this);
-                var toLoad = false;
 
                 // Configure to check if there is form to filter
                 methods.configFormFilter( element );
                 // Configure sorting feature
                 methods.configSorting( element );
+                // Configure search field
+                methods.configSearchField( element );
 
                 // Twitter-style pagination.
                 element.on( 'click', settings.moreSelector, function() {
@@ -134,13 +142,13 @@
                                 win.scrollTop() <= settings.paginateOnScrollMargin )
                                  {
 
-                                // Do not paginate on scroll if chunks are used and
-                                // the current chunk is complete.
-                                var chunckSize = settings.paginateOnScrollChunkSize;
+                                    // Do not paginate on scroll if chunks are used and
+                                    // the current chunk is complete.
+                                    var chunckSize = settings.paginateOnScrollChunkSize;
 
-                                if ( !chunckSize || settings.loadedPages % chunckSize ) {
-                                    element.find( settings.moreSelector ).click();
-                                }
+                                    if ( !chunckSize || settings.loadedPages % chunckSize ) {
+                                        element.find( settings.moreSelector ).click();
+                                    }
                             }
                         }
                     );
@@ -180,6 +188,11 @@
                     {
                         // Fire onCompleted callback.
                         settings.onBefore.apply( null, [settings.initialContext] );
+                        toLoad = true;
+                    },
+                    complete: function()
+                    {
+                        toLoad = false;
                     },
                     success: param.complete
                 }
@@ -305,15 +318,27 @@
                         order: order
                     };
 
-                    $( element ).find( settings.sorterTriggerSelector )
-                            .removeClass( sortCss[0] )
-                            .removeClass( sortCss[1] );
-                    
-                    $( this ).addClass( sortCss[order] );
+                    var callbackSort = settings.onSort;
+                    if ( callbackSort === undefined ) {
+
+                        callbackSort = function( table, triggerElement, order )
+                        {
+                            $( table ).find( settings.sorterTriggerSelector )
+                                    .removeClass( sortCss[0] )
+                                    .removeClass( sortCss[1] );
+                            
+                            $( triggerElement ).addClass( sortCss[order] );
+                        }
+                    }
+
+                    var triggerElment = this;
+                    var data = methods.getData();
+
+                    delete data['page'];
 
                     var params = {
                         url: settings.endPoint,
-                        data: methods.getData(),
+                        data: data,
                         complete: function( fragment )
                         {
                             $( settings.pageContainer ).empty().append( fragment );
@@ -323,12 +348,89 @@
 
                             // Fire onCompleted callback.
                             settings.onCompleted.apply( null, [settings.initialContext, fragment] );
+                            // Fire onSort callback
+                            callbackSort.apply( null, [element, triggerElment, order] );
                         }
                     };
 
                     methods.fetchPage( params );
                 }
             );
+        },
+
+        configSearchField: function( element )
+        {
+            if ( !settings.searchField )
+                return false;
+
+            var timeoutType = null;
+            $( element ).find( settings.searchField ).on( 'keyup paste',
+                function()
+                {
+                    if ( timeoutType ) clearTimeout( timeoutType );
+
+                    var self = $(this);
+                    timeoutType = setTimeout(
+                          function()
+                          {
+                            
+                                var data = methods.getData();
+                                delete data['page'];
+                                delete data[self.attr('name')];
+                                data[self.attr('name')] = self.val();
+
+                                var params = {
+                                    url: settings.endPoint,
+                                    data: data,
+                                    complete: function( fragment )
+                                    {
+                                        $( settings.pageContainer ).empty().append( fragment );
+                                        
+                                        // Set the number of loaded pages.
+                                        settings.loadedPages = 1;
+
+                                        // Fire onCompleted callback.
+                                        settings.onCompleted.apply( null, [settings.initialContext, fragment] );
+                                    }
+                                };
+
+                                methods.fetchPage( params );
+                          },
+                          300
+                    );
+                }
+            );
+        },
+        reload: function()
+        {
+            if ( settings.clearAllOnReload ) {
+
+                if ( $( settings.formSelector ).length )
+                    $( settings.formSelector )[0].reset();
+
+                if ( $( settings.searchField ).length )
+                    $( settings.searchField ).val( '' );
+            }
+
+            var data = methods.getData();
+            delete data['page'];
+
+            var params = {
+                url: settings.endPoint,
+                data: data,
+                complete: function( fragment )
+                {
+                    $( settings.pageContainer ).empty().append( fragment );
+                    
+                    // Set the number of loaded pages.
+                    settings.loadedPages = 1;
+
+                    // Fire onCompleted callback.
+                    settings.onCompleted.apply( null, [settings.initialContext, fragment] );
+                }
+            };
+
+            methods.fetchPage( params );
         }
     };
 
@@ -340,7 +442,7 @@
             // Default to "init"
             return methods.init.apply( this, arguments );
         } else {
-            $.error( 'Method ' +  methodOrOptions + ' does not exist on jQuery.tooltip' );
+            $.error( 'Method ' +  methodOrOptions + ' does not exist on jQuery.endlessPagination' );
         }
     };
 
