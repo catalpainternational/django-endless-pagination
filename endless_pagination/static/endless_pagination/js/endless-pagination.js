@@ -177,12 +177,16 @@
         },
         fetchPage: function( param )
         {
+            var url = param.url;
+            if ( url.indexOf('?') > -1 )
+                url = url.substring(0, url.indexOf('?'));
+
             // Send the Ajax request.
             $.ajax(
                 {
-                    url: param.url.substring(0, param.url.indexOf('?') ),
+                    url:  url,
                     dataType: 'html',
-                    method: 'GET',//$( settings.formSelector ).length ? 'POST' : 'GET',
+                    method: 'GET',
                     data: param.data,
                     beforeSend: function()
                     {
@@ -196,7 +200,7 @@
                     },
                     success: param.complete
                 }
-            );  
+            );
         },
 
         getUrlParameters: function( url )
@@ -208,7 +212,19 @@
             var parameters = {};
             for ( var i = 0; i < sURLVariables.length; i++ ) {
                 var sParameterName = sURLVariables[i].split('=');
-                parameters[sParameterName[0]] = sParameterName[1];
+                var paratemerName = decodeURIComponent(sParameterName[0]);
+
+                paratemerName = paratemerName.replace(/\[\]$/, '');
+                console.log(paratemerName);
+
+                if (!paratemerName) continue;
+
+                if (parameters[paratemerName] != undefined ) {
+                    if (parameters[paratemerName].constructor != Array)
+                        parameters[paratemerName] = [parameters[paratemerName]];
+                    parameters[paratemerName].push(sParameterName[1]);
+                } else
+                    parameters[paratemerName] = sParameterName[1];
             }
           
             return parameters;
@@ -235,17 +251,37 @@
             // If there is a form defined, grab the data
             if ( settings.formSelector && $( settings.formSelector ).length ) {
 
+                var formValues = [];
                 $.each( $( settings.formSelector ).serializeArray(),
                     function(i, v) 
                     {
-                        data[v.name] = v.value;
+                        if ( formValues.indexOf(v.name) > -1 ) {
+
+                            if ( data[v.name].constructor != Array )
+                                data[v.name] = [data[v.name]];
+
+                            data[v.name].push(v.value);
+                        } else
+                            data[v.name] = v.value;
+
+                        formValues.push(v.name);
                     }
+                );
+
+                $('select', $( settings.formSelector )).each(
+                      function()
+                      {
+                         var selectName = $(this).attr('name');
+                         if ( !$(this).val() && data[selectName] != undefined )
+                            delete data[selectName];
+                      }
                 );
             }
 
             // If there is custom data set to the server
-            if ( settings.customFilters )
+            if ( settings.customFilters ) {
                 data = $.extend( data, settings.customFilters );
+            }
 
             // Some column sorting
             if ( settings.enableSorting && settings.sortColumn ) {
@@ -255,6 +291,8 @@
             }
 
             data.querystring_key = settings.initialContext.key;
+
+            console.log(data);
 
             return data;
         },
@@ -406,7 +444,7 @@
             if ( settings.clearAllOnReload ) {
 
                 if ( $( settings.formSelector ).length )
-                    $( ':input', settings.formSelector ).val('').trigger( 'change' ).trigger( 'liszt:updated' );
+                    $( settings.formSelector )[0].reset();
 
                 if ( $( settings.searchField ).length )
                     $( settings.searchField ).val( '' );
@@ -414,9 +452,6 @@
 
             var data = methods.getData();
             delete data['page'];
-
-            var urlSearch = settings.endPoint + '?' + $.param( data );
-            window.history.pushState( {}, "Endless Pagination", urlSearch );
 
             var params = {
                 url: settings.endPoint,
