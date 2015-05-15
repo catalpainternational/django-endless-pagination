@@ -215,7 +215,6 @@
                 var paratemerName = decodeURIComponent(sParameterName[0]);
 
                 paratemerName = paratemerName.replace(/\[\]$/, '');
-                console.log(paratemerName);
 
                 if (!paratemerName) continue;
 
@@ -291,8 +290,6 @@
             }
 
             data.querystring_key = settings.initialContext.key;
-
-            console.log(data);
 
             return data;
         },
