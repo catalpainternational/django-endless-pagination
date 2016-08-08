@@ -8,8 +8,6 @@ VENV = os.path.join(ROOT, '.venv')
 VENV_LINK = os.path.join(VENV, 'local')
 
 
-project = __import__(PROJECT_NAME)
-
 root_dir = os.path.dirname(__file__)
 if root_dir:
     os.chdir(root_dir)
@@ -50,8 +48,9 @@ class VenvLinkDeleted(object):
 with VenvLinkDeleted():
     setup(
         name='django-endless-pagination',
-        version=project.get_version(),
-        description=project.__doc__,
+        version='2.1',
+        description='Django pagination tools supporting Ajax, multiple and lazy pagination, '
+                    'Twitter-style and Digg-style pagination.',
         long_description=read('README.rst'),
         author='Francesco Banconi',
         author_email='francesco.banconi@gmail.com',
