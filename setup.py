@@ -47,14 +47,12 @@ class VenvLinkDeleted(object):
 
 with VenvLinkDeleted():
     setup(
-        name='django-endless-pagination',
+        name='catalpagination',
         version='2.1',
-        description='Django pagination tools supporting Ajax, multiple and lazy pagination, '
-                    'Twitter-style and Digg-style pagination.',
+        description='A fork of https://github.com/frankban/django-endless-pagination',
         long_description=read('README.rst'),
-        author='Francesco Banconi',
-        author_email='francesco.banconi@gmail.com',
-        url='http://github.com/frankban/django-endless-pagination',
+        author='Catalpa',
+        url='https://github.com/catalpainternational/django-endless-pagination',
         keywords='django pagination ajax',
         packages=[
             PROJECT_NAME,

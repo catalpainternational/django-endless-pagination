@@ -7,10 +7,7 @@ and lazy pagination and optional Ajax support. It is devoted to implementing
 web pagination in very few steps.
 
 The **source code** for this app is hosted at
-https://github.com/frankban/django-endless-pagination.
-
-The **Mercurial repository** of this project is hosted at
-https://bitbucket.org/frankban/django-endless-pagination.
+https://github.com/catalpainternational/django-endless-pagination
 
 :doc:`start` is easy!
 
