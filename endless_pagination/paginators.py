@@ -3,12 +3,8 @@
 from __future__ import unicode_literals
 from math import ceil
 
-from django.core.paginator import (
-    EmptyPage,
-    Page,
-    PageNotAnInteger,
-    Paginator,
-)
+from django.core.paginator import EmptyPage, Page, PageNotAnInteger, Paginator
+from django.utils.functional import cached_property
 
 
 class CustomPage(Page):
@@ -65,15 +61,13 @@ class DefaultPaginator(BasePaginator):
             top = self.count
         return CustomPage(self.object_list[bottom:top], number, self)
 
-    def _get_num_pages(self):
-        if self._num_pages is None:
-            if self.count == 0 and not self.allow_empty_first_page:
-                self._num_pages = 0
-            else:
-                hits = max(0, self.count - self.orphans - self.first_page)
-                self._num_pages = int(ceil(hits / float(self.per_page))) + 1
-        return self._num_pages
-    num_pages = property(_get_num_pages)
+    @cached_property
+    def num_pages(self):
+        if self.count == 0 and not self.allow_empty_first_page:
+            return 0
+        else:
+            hits = max(0, self.count - self.orphans - self.first_page)
+            return int(ceil(hits / float(self.per_page))) + 1
 
 
 class LazyPaginator(BasePaginator):
@@ -101,25 +95,22 @@ class LazyPaginator(BasePaginator):
         objects_count = len(objects)
         if objects_count > (current_per_page + self.orphans):
             # If another page is found, increase the total number of pages.
-            self._num_pages = number + 1
+            self.__dict__['num_pages'] = number + 1
             # In any case,  return only objects for this page.
             objects = objects[:current_per_page]
         elif (number != 1) and (objects_count <= self.orphans):
             raise EmptyPage('That page contains no results')
         else:
             # This is the last page.
-            self._num_pages = number
+            self.__dict__['num_pages'] = number
         return CustomPage(objects, number, self)
 
-    def _get_count(self):
+    def _count(self):
         raise NotImplementedError
+    count = property(_count)
 
-    count = property(_get_count)
-
-    def _get_num_pages(self):
-        return self._num_pages
-
-    num_pages = property(_get_num_pages)
+    def num_pages(self):
+        return self.__dict__['num_pages']
 
     def _get_page_range(self):
         raise NotImplementedError
