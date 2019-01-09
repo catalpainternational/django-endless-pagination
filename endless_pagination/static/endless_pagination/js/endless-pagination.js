@@ -135,8 +135,7 @@
                     var win = $(window),
                         doc = $(document);
 
-                    win.scroll(
-                        function()
+                    win.on('scroll', function()
                         {
                             if ( doc.height() - win.height() -
                                 win.scrollTop() <= settings.paginateOnScrollMargin )
@@ -147,7 +146,7 @@
                                     var chunckSize = settings.paginateOnScrollChunkSize;
 
                                     if ( !chunckSize || settings.loadedPages % chunckSize ) {
-                                        element.find( settings.moreSelector ).click();
+                                        element.find( settings.moreSelector ).trigger('click');
                                     }
                             }
                         }
