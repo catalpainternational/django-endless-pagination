@@ -254,7 +254,6 @@
                     function(i, v) 
                     {
                         if ( formValues.indexOf(v.name) > -1 ) {
-
                             if ( data[v.name].constructor != Array )
                                 data[v.name] = [data[v.name]];
 
@@ -266,13 +265,15 @@
                     }
                 );
 
+                // compare form fields value with URL parameters
                 $('select', $( settings.formSelector )).each(
-                      function()
-                      {
-                         var selectName = $(this).attr('name');
-                         if ( !$(this).val() && data[selectName] != undefined )
-                            delete data[selectName];
-                      }
+                    function()
+                    {
+                        var selectName = $(this).attr('name');
+                        // check field value length (since we have strings and arrays)
+                        if ( $(this).val().length === 0 && data[selectName] !== undefined )
+                           delete data[selectName];
+                    }
                 );
             }
 
