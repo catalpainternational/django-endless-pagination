@@ -186,6 +186,7 @@
                     url:  url,
                     dataType: 'html',
                     method: 'GET',
+                    traditional: true,  // avoids having list keys converted with keyname%5B%5D
                     data: param.data,
                     beforeSend: function()
                     {
@@ -305,7 +306,7 @@
                         var data = methods.getData();
                         delete data['page'];
 
-                        var urlSearch = settings.endPoint + '?' + $.param( data );
+                        var urlSearch = settings.endPoint + '?' + $.param( data, true ); // use `traditional`
                         window.history.pushState( {}, "Endless Pagination", urlSearch );
 
                         var params = {
