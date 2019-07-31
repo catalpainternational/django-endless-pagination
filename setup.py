@@ -48,7 +48,7 @@ class VenvLinkDeleted(object):
 with VenvLinkDeleted():
     setup(
         name='catalpagination',
-        version='2.2',
+        version='2.3',
         description='A fork of https://github.com/frankban/django-endless-pagination',
         long_description=read('README.rst'),
         author='Catalpa',
